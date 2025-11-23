@@ -4,97 +4,88 @@ from tkinter import messagebox
 ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("blue")
 
+class Task:
+    def __init__(self, text):
+        self.text = text
+        self.checked = ctk.BooleanVar()
+
+tasks = []
+
+def refresh_list():
+    for widget in list_frame.winfo_children():
+        widget.destroy()
+
+    for idx, task in enumerate(tasks):
+        frame = ctk.CTkFrame(list_frame)
+        frame.pack(fill="x", pady=5)
+
+        chk = ctk.CTkCheckBox(frame, text=task.text,
+                              variable=task.checked, width=20)
+        chk.pack(side="left", padx=10)
+
+        edit_btn = ctk.CTkButton(frame, text="Edit", width=50,
+                                 command=lambda i=idx: load_for_update(i))
+        edit_btn.pack(side="right", padx=5)
+
+        del_btn = ctk.CTkButton(frame, text="X", width=50, fg_color="red",
+                                command=lambda i=idx: delete_task(i))
+        del_btn.pack(side="right", padx=5)
+
 def add_task():
-    task = entry.get()
-    if task:
-        listbox.insert("end", task)
+    text = entry.get()
+    if text.strip():
+        tasks.append(Task(text))
         entry.delete(0, "end")
+        refresh_list()
     else:
         messagebox.showwarning("Warning", "Enter a task")
 
+def load_for_update(index):
+    global update_index
+    update_index = index
+    entry.delete(0, "end")
+    entry.insert(0, tasks[index].text)
+    add_btn.configure(state="disabled")
+    update_btn.configure(state="normal")
+
 def update_task():
-    try:
-        index = listbox.curselection()[0]
-        new_task = entry.get()
-        if new_task:
-            listbox.delete(index)
-            listbox.insert(index, new_task)
-            entry.delete(0, "end")
-        else:
-            messagebox.showwarning("Warning", "Enter a task")
-    except:
-        messagebox.showwarning("Warning", "Select a task to update")
+    text = entry.get()
+    if text.strip():
+        tasks[update_index].text = text
+        entry.delete(0, "end")
+        add_btn.configure(state="normal")
+        update_btn.configure(state="disabled")
+        refresh_list()
+    else:
+        messagebox.showwarning("Warning", "Enter a task")
 
-def delete_task():
-    try:
-        index = listbox.curselection()[0]
-        listbox.delete(index)
-    except:
-        messagebox.showwarning("Warning", "Select a task to delete")
-
-def mark_done():
-    try:
-        index = listbox.curselection()[0]
-        task = listbox.get(index)
-        if not task.startswith("✔ "):
-            listbox.delete(index)
-            listbox.insert(index, "✔ " + task)
-    except:
-        messagebox.showwarning("Warning", "Select a task to mark done")
+def delete_task(index):
+    tasks.pop(index)
+    refresh_list()
 
 app = ctk.CTk()
-app.title("To-Do List")
-app.geometry("450x600")
+app.title("To-Do List with Checkboxes")
+app.geometry("500x650")
 
 title = ctk.CTkLabel(app, text="To-Do List", font=("Arial", 28, "bold"))
 title.pack(pady=20)
 
-entry = ctk.CTkEntry(app, width=300, height=40, font=("Arial", 16))
+entry = ctk.CTkEntry(app, width=350, height=40, font=("Arial", 16))
 entry.pack(pady=10)
 
-button_frame = ctk.CTkFrame(app)
-button_frame.pack(pady=10)
+btn_frame = ctk.CTkFrame(app)
+btn_frame.pack(pady=10)
 
-add_btn = ctk.CTkButton(button_frame, text="Add", width=100, command=add_task)
-add_btn.grid(row=0, column=0, padx=5)
+add_btn = ctk.CTkButton(btn_frame, text="Add Task", width=120, command=add_task)
+add_btn.grid(row=0, column=0, padx=10)
 
-update_btn = ctk.CTkButton(button_frame, text="Update", width=100, command=update_task)
-update_btn.grid(row=0, column=1, padx=5)
+update_btn = ctk.CTkButton(btn_frame, text="Update Task", width=120,
+                           command=update_task, state="disabled")
+update_btn.grid(row=0, column=1, padx=10)
 
-delete_btn = ctk.CTkButton(button_frame, text="Delete", width=100, command=delete_task)
-delete_btn.grid(row=0, column=2, padx=5)
+list_frame = ctk.CTkScrollableFrame(app, width=450, height=450)
+list_frame.pack(pady=20, fill="both", expand=True)
 
-done_btn = ctk.CTkButton(app, text="Mark Done", width=150, command=mark_done)
-done_btn.pack(pady=10)
-
-listbox = ctk.CTkTextbox(app, width=350, height=300, font=("Arial", 16))
-listbox.pack(pady=20)
-
-def insert(self, index, text):
-    listbox.insert("end", text + "\n")
-
-def delete(self, index):
-    lines = listbox.get("0.0", "end").strip().split("\n")
-    if 0 <= index < len(lines):
-        del lines[index]
-        listbox.delete("0.0", "end")
-        for line in lines:
-            listbox.insert("end", line + "\n")
-
-def get(self, index):
-    lines = listbox.get("0.0", "end").strip().split("\n")
-    return lines[index]
-
-def curselection(self):
-    try:
-        index = int(listbox.index("insert").split(".")[0]) - 1
-        return [index]
-    except:
-        return []
-
-listbox.insert = insert.__get__(listbox)
-listbox.delete = delete.__get__(listbox)
-listbox.get = get.__get__(listbox)
-listbox.curselection = curselection.__get__(listbox)
+update_index = None
 
 app.mainloop()
